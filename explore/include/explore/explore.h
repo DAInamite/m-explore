@@ -72,7 +72,7 @@ private:
   /**
    * @brief  Make a global plan
    */
-  void makePlan();
+  bool makePlan();
   bool makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
 
   /**
@@ -99,6 +99,7 @@ private:
   ros::Timer exploring_timer_;
   ros::Timer oneshot_;
   ros::ServiceServer make_plan_service_;
+  std::string message_;
 
   std::vector<geometry_msgs::Point> frontier_blacklist_;
   geometry_msgs::Point prev_goal_;

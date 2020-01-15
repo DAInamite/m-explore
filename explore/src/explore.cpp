@@ -176,12 +176,12 @@ void Explore::visualizeFrontiers(
 
 bool Explore::makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
-    makePlan();
-    res.success = true;
+    res.success = makePlan();
+    res.message = message_;
     return true;
 }
 
-void Explore::makePlan()
+bool Explore::makePlan()
 {
   ROS_INFO("Explore::makePlan");
   // find frontiers
@@ -193,14 +193,15 @@ void Explore::makePlan()
     ROS_DEBUG("frontier %zd cost: %f", i, frontiers[i].cost);
   }
 
-  if (frontiers.empty()) {
-    stop();
-    return;
-  }
-
   // publish frontiers as visualization markers
   if (visualize_) {
     visualizeFrontiers(frontiers);
+  }
+
+  if (frontiers.empty()) {
+    stop();
+    message_ = "no frontier";
+    return false;
   }
 
   // find non blacklisted frontier
@@ -211,7 +212,8 @@ void Explore::makePlan()
                        });
   if (frontier == frontiers.end()) {
     stop();
-    return;
+    message_ = "no white frontier";
+    return false;
   }
   geometry_msgs::Point target_position = frontier->centroid;
 
@@ -227,13 +229,13 @@ void Explore::makePlan()
   if (ros::Time::now() - last_progress_ > progress_timeout_) {
     frontier_blacklist_.push_back(target_position);
     ROS_DEBUG("Adding current goal to black list");
-    makePlan();
-    return;
+    return makePlan();
   }
 
   // we don't need to do anything if we still pursuing the same goal
   if (same_goal) {
-    return;
+    message_ = "same goal";
+    return false;
   }
 
   // send goal to move_base if we have something new to pursue
@@ -248,6 +250,7 @@ void Explore::makePlan()
                 const move_base_msgs::MoveBaseResultConstPtr& result) {
         reachedGoal(status, result, target_position);
       });
+  return true;
 }
 
 bool Explore::goalOnBlacklist(const geometry_msgs::Point& goal)
