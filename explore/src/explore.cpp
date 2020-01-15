@@ -250,6 +250,9 @@ bool Explore::makePlan()
                 const move_base_msgs::MoveBaseResultConstPtr& result) {
         reachedGoal(status, result, target_position);
       });
+  std::ostringstream oss;
+  oss << target_position;
+  message_ = oss.str();
   return true;
 }
 
@@ -284,9 +287,9 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
   // execute via timer to prevent dead lock in move_base_client (this is
   // callback for sendGoal, which is called in makePlan). the timer must live
   // until callback is executed.
-  oneshot_ = relative_nh_.createTimer(
+  /*oneshot_ = relative_nh_.createTimer(
       ros::Duration(0, 0), [this](const ros::TimerEvent&) { makePlan(); },
-      true);
+      true);*/
 }
 
 void Explore::start()
