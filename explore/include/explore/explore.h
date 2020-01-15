@@ -74,6 +74,7 @@ private:
    */
   bool makePlan();
   bool makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+  void publishPlan();
 
   /**
    * @brief  Publish a frontiers as markers
@@ -106,6 +107,8 @@ private:
   double prev_distance_;
   ros::Time last_progress_;
   size_t last_markers_count_;
+  geometry_msgs::Point target_position_;
+  bool target_position_valid_;
 
   // parameters
   double planner_frequency_;

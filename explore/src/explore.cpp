@@ -57,6 +57,7 @@ Explore::Explore()
   , move_base_client_("move_base")
   , prev_distance_(0)
   , last_markers_count_(0)
+  , target_position_valid_(false)
 {
   double timeout;
   double min_frontier_size;
@@ -83,6 +84,8 @@ Explore::Explore()
   ROS_INFO("Connected to move_base server");
 
   make_plan_service_ = private_nh_.advertiseService<std_srvs::Trigger::Request, std_srvs::Trigger::Response>("make_plan", boost::bind(&Explore::makePlan_, this, _1, _2));
+
+  start();
 }
 
 Explore::~Explore()
@@ -178,6 +181,7 @@ bool Explore::makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Resp
 {
     res.success = makePlan();
     res.message = message_;
+    target_position_valid_ = res.success;
     return true;
 }
 
@@ -238,23 +242,34 @@ bool Explore::makePlan()
     return false;
   }
 
-  // send goal to move_base if we have something new to pursue
-  move_base_msgs::MoveBaseGoal goal;
-  goal.target_pose.pose.position = target_position;
-  goal.target_pose.pose.orientation.w = 1.;
-  goal.target_pose.header.frame_id = costmap_client_.getGlobalFrameID();
-  goal.target_pose.header.stamp = ros::Time::now();
-  move_base_client_.sendGoal(
-      goal, [this, target_position](
-                const actionlib::SimpleClientGoalState& status,
-                const move_base_msgs::MoveBaseResultConstPtr& result) {
-        reachedGoal(status, result, target_position);
-      });
+  target_position_ = target_position;
   std::ostringstream oss;
   oss << target_position;
   message_ = oss.str();
   return true;
 }
+
+
+void Explore::publishPlan()
+{
+    if (target_position_valid_)
+    {
+        geometry_msgs::Point target_position = target_position;
+        // send goal to move_base if we have something new to pursue
+        move_base_msgs::MoveBaseGoal goal;
+        goal.target_pose.pose.position = target_position_;
+        goal.target_pose.pose.orientation.w = 1.;
+        goal.target_pose.header.frame_id = costmap_client_.getGlobalFrameID();
+        goal.target_pose.header.stamp = ros::Time::now();
+        move_base_client_.sendGoal(
+            goal, [this, target_position](
+                      const actionlib::SimpleClientGoalState& status,
+                      const move_base_msgs::MoveBaseResultConstPtr& result) {
+              reachedGoal(status, result, target_position_);
+            });
+    }
+}
+
 
 bool Explore::goalOnBlacklist(const geometry_msgs::Point& goal)
 {
@@ -296,7 +311,7 @@ void Explore::start()
 {
     exploring_timer_ =
         relative_nh_.createTimer(ros::Duration(1. / planner_frequency_),
-                                 [this](const ros::TimerEvent&) { makePlan(); });
+                                 [this](const ros::TimerEvent&) { publishPlan(); });
   //exploring_timer_.start();
   ROS_INFO("Exploration started.");
 }
