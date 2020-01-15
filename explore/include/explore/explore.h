@@ -46,6 +46,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <move_base_msgs/MoveBaseAction.h>
 #include <ros/ros.h>
+#include <std_srvs/Trigger.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include <explore/costmap_client.h>
@@ -72,6 +73,7 @@ private:
    * @brief  Make a global plan
    */
   void makePlan();
+  bool makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
 
   /**
    * @brief  Publish a frontiers as markers
@@ -96,6 +98,7 @@ private:
   frontier_exploration::FrontierSearch search_;
   ros::Timer exploring_timer_;
   ros::Timer oneshot_;
+  ros::ServiceServer make_plan_service_;
 
   std::vector<geometry_msgs::Point> frontier_blacklist_;
   geometry_msgs::Point prev_goal_;

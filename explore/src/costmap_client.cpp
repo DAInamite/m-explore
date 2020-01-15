@@ -145,7 +145,7 @@ void Costmap2DClient::updateFullMap(const nav_msgs::OccupancyGrid::ConstPtr& msg
 void Costmap2DClient::updatePartialMap(
     const map_msgs::OccupancyGridUpdate::ConstPtr& msg)
 {
-  ROS_DEBUG("received partial map update");
+  //ROS_DEBUG("received partial map update");
   global_frame_ = msg->header.frame_id;
 
   if (msg->x < 0 || msg->y < 0) {

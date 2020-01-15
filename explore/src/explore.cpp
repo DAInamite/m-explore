@@ -82,9 +82,7 @@ Explore::Explore()
   move_base_client_.waitForServer();
   ROS_INFO("Connected to move_base server");
 
-  exploring_timer_ =
-      relative_nh_.createTimer(ros::Duration(1. / planner_frequency_),
-                               [this](const ros::TimerEvent&) { makePlan(); });
+  make_plan_service_ = private_nh_.advertiseService<std_srvs::Trigger::Request, std_srvs::Trigger::Response>("make_plan", boost::bind(&Explore::makePlan_, this, _1, _2));
 }
 
 Explore::~Explore()
@@ -111,7 +109,7 @@ void Explore::visualizeFrontiers(
   green.b = 0;
   green.a = 1.0;
 
-  ROS_DEBUG("visualising %lu frontiers", frontiers.size());
+  //ROS_DEBUG("visualising %lu frontiers", frontiers.size());
   visualization_msgs::MarkerArray markers_msg;
   std::vector<visualization_msgs::Marker>& markers = markers_msg.markers;
   visualization_msgs::Marker m;
@@ -176,8 +174,16 @@ void Explore::visualizeFrontiers(
   marker_array_publisher_.publish(markers_msg);
 }
 
+bool Explore::makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+{
+    makePlan();
+    res.success = true;
+    return true;
+}
+
 void Explore::makePlan()
 {
+  ROS_INFO("Explore::makePlan");
   // find frontiers
   auto pose = costmap_client_.getRobotPose();
   // get frontiers sorted according to cost
@@ -282,7 +288,11 @@ void Explore::reachedGoal(const actionlib::SimpleClientGoalState& status,
 
 void Explore::start()
 {
-  exploring_timer_.start();
+    exploring_timer_ =
+        relative_nh_.createTimer(ros::Duration(1. / planner_frequency_),
+                                 [this](const ros::TimerEvent&) { makePlan(); });
+  //exploring_timer_.start();
+  ROS_INFO("Exploration started.");
 }
 
 void Explore::stop()
