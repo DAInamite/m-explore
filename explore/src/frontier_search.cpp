@@ -16,11 +16,12 @@ using costmap_2d::FREE_SPACE;
 
 FrontierSearch::FrontierSearch(costmap_2d::Costmap2D* costmap,
                                double potential_scale, double gain_scale,
-                               double min_frontier_size)
+                               double min_frontier_size, double max_frontier_size)
   : costmap_(costmap)
   , potential_scale_(potential_scale)
   , gain_scale_(gain_scale)
   , min_frontier_size_(min_frontier_size)
+  , max_frontier_size_(max_frontier_size)
 {
 }
 
@@ -160,6 +161,11 @@ Frontier FrontierSearch::buildNewFrontier(unsigned int initial_cell,
         // add to queue for breadth first search
         bfs.push(nbr);
       }
+    }
+    
+    // limit max size
+    if (output.size * costmap_->getResolution() > max_frontier_size_) {
+        break;
     }
   }
 

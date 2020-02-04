@@ -60,7 +60,7 @@ Explore::Explore()
   , target_position_valid_(false)
 {
   double timeout;
-  double min_frontier_size;
+  double min_frontier_size, max_frontier_size;
   private_nh_.param("planner_frequency", planner_frequency_, 1.0);
   private_nh_.param("progress_timeout", timeout, 30.0);
   progress_timeout_ = ros::Duration(timeout);
@@ -69,10 +69,11 @@ Explore::Explore()
   private_nh_.param("orientation_scale", orientation_scale_, 0.0);
   private_nh_.param("gain_scale", gain_scale_, 1.0);
   private_nh_.param("min_frontier_size", min_frontier_size, 0.5);
+  private_nh_.param("max_frontier_size", max_frontier_size, 2.0);
 
   search_ = frontier_exploration::FrontierSearch(costmap_client_.getCostmap(),
                                                  potential_scale_, gain_scale_,
-                                                 min_frontier_size);
+                                                 min_frontier_size, max_frontier_size);
 
   if (visualize_) {
     marker_array_publisher_ =
