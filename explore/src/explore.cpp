@@ -204,7 +204,7 @@ bool Explore::makePlan()
   }
 
   if (frontiers.empty()) {
-    stop();
+    //stop();
     message_ = "no frontier";
     return false;
   }
@@ -216,7 +216,7 @@ bool Explore::makePlan()
                          return goalOnBlacklist(f.centroid);
                        });
   if (frontier == frontiers.end()) {
-    stop();
+    //stop();
     message_ = "no white frontier";
     return false;
   }
