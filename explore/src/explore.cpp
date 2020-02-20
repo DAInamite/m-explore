@@ -81,6 +81,8 @@ Explore::Explore()
         private_nh_.advertise<visualization_msgs::MarkerArray>("frontiers", 10);
   }
 
+  visited_map_publisher_ =private_nh_.advertise<nav_msgs::OccupancyGrid>("visited_map", 10);
+
   ROS_INFO("Waiting to connect to move_base server");
   move_base_client_.waitForServer();
   ROS_INFO("Connected to move_base server");
@@ -221,18 +223,20 @@ bool Explore::makePlan()
   auto pose = costmap_client_.getRobotPose();
   // get frontiers sorted according to cost
   auto frontiers = search_.searchFrom(pose.position);
-  ROS_DEBUG("found %lu frontiers", frontiers.size());
+  ROS_DEBUG("Explore::makePlan found %lu frontiers", frontiers.size());
   for (size_t i = 0; i < frontiers.size(); ++i) {
-    ROS_DEBUG("frontier %zd cost: %f", i, frontiers[i].cost);
+    ROS_DEBUG("Explore::makePlan frontier %zd cost: %f", i, frontiers[i].cost);
   }
 
   // publish frontiers as visualization markers
   if (visualize_) {
     visualizeFrontiers(frontiers);
+
+    auto visited_map = search_.getVisitedMap();
+    visited_map_publisher_.publish(visited_map);
   }
 
   if (frontiers.empty()) {
-    //stop();
     message_ = "no frontier";
     return false;
   }
@@ -261,7 +265,7 @@ bool Explore::makePlan()
   // black list if we've made no progress for a long time
   if (ros::Time::now() - last_progress_ > progress_timeout_) {
     frontier_blacklist_.push_back(target_position);
-    ROS_DEBUG("Adding current goal to black list");
+    ROS_DEBUG("Explore::makePlan Adding current goal to black list");
     return makePlan();
   }
 
@@ -275,6 +279,8 @@ bool Explore::makePlan()
   std::ostringstream oss;
   oss << target_position;
   message_ = oss.str();
+
+  ROS_DEBUG("Explore::makePlan %s", message_.c_str());
   return true;
 }
 

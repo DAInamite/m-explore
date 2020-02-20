@@ -2,6 +2,7 @@
 #define FRONTIER_SEARCH_H_
 
 #include <costmap_2d/costmap_2d.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 namespace frontier_exploration
 {
@@ -44,6 +45,8 @@ public:
    */
   std::vector<Frontier> searchFrom(geometry_msgs::Point position);
 
+  nav_msgs::OccupancyGrid getVisitedMap() const;
+
 protected:
   /**
    * @brief Starting from an initial cell, build a frontier from valid adjacent
@@ -83,6 +86,8 @@ private:
   unsigned int size_x_, size_y_;
   double potential_scale_, gain_scale_;
   double min_frontier_size_, max_frontier_size_;
+  std::vector<bool> visited_flag_;
+  std::vector<bool> frontier_flag_;
 };
 }
 #endif

@@ -44,8 +44,10 @@ std::vector<Frontier> FrontierSearch::searchFrom(geometry_msgs::Point position)
   size_y_ = costmap_->getSizeInCellsY();
 
   // initialize flag arrays to keep track of visited and frontier cells
-  std::vector<bool> frontier_flag(size_x_ * size_y_, false);
-  std::vector<bool> visited_flag(size_x_ * size_y_, false);
+  frontier_flag_.resize(size_x_ * size_y_);
+  std::fill(frontier_flag_.begin(), frontier_flag_.end(), false);
+  visited_flag_.resize(size_x_ * size_y_);
+  std::fill(visited_flag_.begin(), visited_flag_.end(), false);
 
   // initialize breadth first search
   std::queue<unsigned int> bfs;
@@ -58,7 +60,7 @@ std::vector<Frontier> FrontierSearch::searchFrom(geometry_msgs::Point position)
     bfs.push(pos);
     ROS_WARN("Could not find nearby clear cell to start search");
   }
-  visited_flag[bfs.front()] = true;
+  visited_flag_[bfs.front()] = true;
 
   while (!bfs.empty()) {
     unsigned int idx = bfs.front();
@@ -68,14 +70,14 @@ std::vector<Frontier> FrontierSearch::searchFrom(geometry_msgs::Point position)
     for (unsigned nbr : nhood4(idx, *costmap_)) {
       // add to queue all free, unvisited cells, use descending search in case
       // initialized on non-free cell
-      if (map_[nbr] <= map_[idx] && !visited_flag[nbr]) {
-        visited_flag[nbr] = true;
+      if (map_[nbr] <= map_[idx] && !visited_flag_[nbr]) {
+        visited_flag_[nbr] = true;
         bfs.push(nbr);
         // check if cell is new frontier cell (unvisited, NO_INFORMATION, free
         // neighbour)
-      } else if (isNewFrontierCell(nbr, frontier_flag)) {
-        frontier_flag[nbr] = true;
-        Frontier new_frontier = buildNewFrontier(nbr, pos, frontier_flag);
+      } else if (isNewFrontierCell(nbr, frontier_flag_)) {
+        frontier_flag_[nbr] = true;
+        Frontier new_frontier = buildNewFrontier(nbr, pos, frontier_flag_);
         if (new_frontier.size * costmap_->getResolution() >=
             min_frontier_size_) {
           frontier_list.push_back(new_frontier);
@@ -200,4 +202,26 @@ double FrontierSearch::frontierCost(const Frontier& frontier)
           costmap_->getResolution()) -
          (gain_scale_ * frontier.size * costmap_->getResolution());
 }
+
+nav_msgs::OccupancyGrid FrontierSearch::getVisitedMap() const {
+    nav_msgs::OccupancyGrid map;
+    map.info.width = size_x_;
+    map.info.height = size_y_;
+    map.info.resolution = costmap_->getResolution();
+    map.info.origin.position.x = costmap_->getOriginX();
+    map.info.origin.position.y = costmap_->getOriginY();
+
+    map.data.resize(visited_flag_.size(), -1);  // -1 means unknown
+    for(std::vector<bool>::size_type i = 0; i != visited_flag_.size(); i++) {
+        if (visited_flag_[i]) {
+            map.data[i] = 0; // 0 means clear
+        }
+        if (frontier_flag_[i]) {
+            map.data[i] = 100;
+        }
+    }
+
+    return map;
+}
+
 }
