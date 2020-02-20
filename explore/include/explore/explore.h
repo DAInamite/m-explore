@@ -47,6 +47,7 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
+#include <std_srvs/SetBool.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include <explore/costmap_client.h>
@@ -74,6 +75,7 @@ private:
    */
   bool makePlan();
   bool makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+  bool setAutoExplore(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res);
   void publishPlan();
 
   /**
@@ -100,6 +102,7 @@ private:
   ros::Timer exploring_timer_;
   ros::Timer oneshot_;
   ros::ServiceServer make_plan_service_;
+  ros::ServiceServer auto_explore_service_;
   std::string message_;
 
   std::vector<geometry_msgs::Point> frontier_blacklist_;
@@ -109,6 +112,7 @@ private:
   size_t last_markers_count_;
   geometry_msgs::Point target_position_;
   bool target_position_valid_;
+  bool auto_explore_;
 
   // parameters
   double planner_frequency_;

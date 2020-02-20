@@ -58,6 +58,7 @@ Explore::Explore()
   , prev_distance_(0)
   , last_markers_count_(0)
   , target_position_valid_(false)
+  , auto_explore_(false)
 {
   double timeout;
   double min_frontier_size, max_frontier_size;
@@ -85,7 +86,7 @@ Explore::Explore()
   ROS_INFO("Connected to move_base server");
 
   make_plan_service_ = private_nh_.advertiseService<std_srvs::Trigger::Request, std_srvs::Trigger::Response>("make_plan", boost::bind(&Explore::makePlan_, this, _1, _2));
-
+  auto_explore_service_ = private_nh_.advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>("auto_explore", boost::bind(&Explore::setAutoExplore, this, _1, _2));
   start();
 }
 
@@ -186,6 +187,33 @@ bool Explore::makePlan_(std_srvs::Trigger::Request &req, std_srvs::Trigger::Resp
     return true;
 }
 
+bool Explore::setAutoExplore(std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res)
+{
+    if (req.data) {
+
+        if (auto_explore_) {
+            res.success = true;
+        } else {
+            // try to make plan once
+            target_position_valid_ = makePlan();
+            res.success = target_position_valid_;
+        }
+
+        // start auto mode
+        if (res.success) {
+            auto_explore_ = true;
+            res.message = "auto expore enabled";
+        } else {
+            res.message = message_;
+        }
+    } else {
+        auto_explore_ = false;
+        res.success = true;
+        res.message = "auto expore disabled";
+    }
+    return true;
+}
+
 bool Explore::makePlan()
 {
   ROS_INFO("Explore::makePlan");
@@ -253,6 +281,10 @@ bool Explore::makePlan()
 
 void Explore::publishPlan()
 {
+    if (auto_explore_) {
+        target_position_valid_ = makePlan();
+    }
+
     if (target_position_valid_)
     {
         geometry_msgs::Point target_position = target_position;
