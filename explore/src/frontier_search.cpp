@@ -147,8 +147,10 @@ Frontier FrontierSearch::buildNewFrontier(unsigned int initial_cell,
         output.size++;
 
         // update centroid of frontier
-        output.centroid.x += wx;
-        output.centroid.y += wy;
+        auto centroid = output.size / 2;
+        //output.centroid.x += wx;
+        //output.centroid.y += wy;
+        output.centroid = output.points[centroid];
 
         // determine frontier's distance from robot, going by closest gridcell
         // to robot
@@ -172,8 +174,8 @@ Frontier FrontierSearch::buildNewFrontier(unsigned int initial_cell,
   }
 
   // average out frontier centroid
-  output.centroid.x /= output.size;
-  output.centroid.y /= output.size;
+  //output.centroid.x /= output.size;
+  //output.centroid.y /= output.size;
   return output;
 }
 
