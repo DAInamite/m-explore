@@ -209,7 +209,7 @@ bool Explore::setAutoExplore(std_srvs::SetBool::Request &req, std_srvs::SetBool:
             res.message = message_;
         }
     } else {
-        auto_explore_ = false;
+        stop();
         res.success = true;
         res.message = "auto expore disabled";
     }
@@ -248,7 +248,7 @@ bool Explore::makePlan()
                          return goalOnBlacklist(f.centroid);
                        });
   if (frontier == frontiers.end()) {
-    //stop();
+    stop();
     message_ = "no white frontier";
     return false;
   }
@@ -358,7 +358,8 @@ void Explore::start()
 void Explore::stop()
 {
   move_base_client_.cancelAllGoals();
-  exploring_timer_.stop();
+  auto_explore_ = false;
+  //exploring_timer_.stop();
   ROS_INFO("Exploration stopped.");
 }
 
